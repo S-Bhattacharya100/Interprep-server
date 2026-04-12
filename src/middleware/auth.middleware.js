@@ -4,24 +4,24 @@ const ApiError = require("../utils/apiError");
 
 // Authentication middleware for protected routs
 const authMiddleware = (req, res, next) => {
-    
-        const authHeader = req.headers.authorization;
 
-        // check if header exists
-        if (!authHeader) {
-            return next(
-                new ApiError(status.UNAUTHORIZED, "No token provided")
-            );
-        }
+    const authHeader = req.headers.authorization;
 
-        // Check token format
-        if (!authHeader.startsWith("Bearer ")) {
-            return next(
-                new ApiError(status.UNAUTHORIZED, "Invalid token format")
-            );
-        }
+    // check if header exists
+    if (!authHeader) {
+        return next(
+            new ApiError(status.UNAUTHORIZED, "No token provided")
+        );
+    }
 
-        try {
+    // Check token format
+    if (!authHeader.startsWith("Bearer ")) {
+        return next(
+            new ApiError(status.UNAUTHORIZED, "Invalid token format")
+        );
+    }
+
+    try {
         // Accessing the token
         const token = authHeader.split(" ")[1];
 
@@ -40,7 +40,7 @@ const authMiddleware = (req, res, next) => {
             new ApiError(status.UNAUTHORIZED, "Invalid or expired token")
         );
     }
-    
+
 }
 
 module.exports = authMiddleware;

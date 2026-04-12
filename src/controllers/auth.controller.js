@@ -129,7 +129,7 @@ const logout = asyncHandler(async (req, res) => {
         throw new ApiError(status.UNAUTHORIZED, "Refresh token not found");
     }
 
-    const user = await User.findById( req.user.id );
+    const user = await User.findOne({ refreshToken });
 
     if (!user || user.refreshToken !== refreshToken) {
         throw new ApiError(status.UNAUTHORIZED, "Invalid refresh token");
