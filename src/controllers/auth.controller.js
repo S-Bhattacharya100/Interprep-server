@@ -8,7 +8,7 @@ const ApiError = require("../utils/apiError");
 // Register
 const register = asyncHandler(async (req, res) => {
 
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     // Check for existing user
     const existingUser = await User.findOne({ email });
@@ -21,7 +21,8 @@ const register = asyncHandler(async (req, res) => {
     const user = new User({
         name,
         email,
-        password
+        password,
+        role
     });
 
     await user.save(); // Triggers pre-save hashing internally
@@ -45,6 +46,7 @@ const register = asyncHandler(async (req, res) => {
             id: user._id,
             name: user.name,
             email: user.email,
+            role: user.role
         }
     });
 
@@ -85,7 +87,8 @@ const logIn = asyncHandler(async (req, res) => {
         user: {
             id: user._id,
             name: user.name,
-            email: user.email
+            email: user.email,
+            role: user.role
         }
     });
 });

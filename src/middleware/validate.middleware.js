@@ -8,7 +8,7 @@ const validate = (schema) => (req, res, next) => {
     });
 
     if(error) {
-        const message = error.details.map(err => err.message.join(", "));
+        const message = error.details.map(err => err.message).join(", ");
         return next(new ApiError(status.BAD_REQUEST, message));
     }
 

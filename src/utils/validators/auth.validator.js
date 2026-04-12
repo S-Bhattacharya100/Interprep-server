@@ -18,7 +18,8 @@ const registerSchema = joi.object({
 
     role: joi.string()
     .valid("admin", "user")
-    .required()
+    .optional()
+    .default("user")
 });
 
 // Login vadilation
