@@ -4,6 +4,8 @@ const status = require("../constants/statusCodes");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/apiError");
+const crypto = require("crypto");
+const { sendVerificationEmail } = require("../services/email.service");
 
 // Register
 const register = asyncHandler(async (req, res) => {
@@ -17,29 +19,67 @@ const register = asyncHandler(async (req, res) => {
         throw new ApiError(status.BAD_REQUEST, "User already exists");
     }
 
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
     // Save the user
     const user = new User({
         name,
         email,
         password,
-        role
+        role,
+        verificationToken,
+        verificationTokenExpiry: Date.now() + 10 * 60 * 1000 // 10 min
     });
 
     await user.save(); // Triggers pre-save hashing internally
 
-    // Generate access token
-    const accessToken = tokenService.generateAccessToken(user);
-    // Generate refresh token
-    const refreshToken = tokenService.generateRefreshToken(user._id);
+    await sendVerificationEmail(email, verificationToken);
 
-    // Add refresh token
-    await User.findByIdAndUpdate(user._id, {
-        refreshToken
+    // Send registration and login response
+    return res.status(status.CREATED).json({
+        message: "User registered successfully. Please verify your email.",
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
     });
 
-    // Send registerd and logged in response
-    return res.status(status.CREATED).json({
-        message: "User registerd successfully",
+});
+
+const verifyEmail = asyncHandler(async(req, res) => {
+    const { token } = req.query;
+
+    if(!token) {
+        throw new ApiError(status.BAD_REQUEST, "Verification token is required");
+    }
+
+    const user = await User.findOne({
+        verificationToken: token,
+        verificationTokenExpiry: { $gt: Date.now()}
+    });
+
+    if(!user) {
+        throw new ApiError(status.UNAUTHORIZED, "Expired or invalid verification token");
+    }
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpiry = null;
+
+    await user.save();
+
+    // Generate tokens for auto-login
+    const accessToken = tokenService.generateAccessToken(user);
+    const refreshToken = tokenService.generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Send verification success with auto-login tokens
+    return res.status(status.SUCCESS).json({
+        message: "Email verified successfully. Logged in automatically.",
         accessToken,
         refreshToken,
         user: {
@@ -49,7 +89,6 @@ const register = asyncHandler(async (req, res) => {
             role: user.role
         }
     });
-
 });
 
 // Log in
@@ -62,6 +101,10 @@ const logIn = asyncHandler(async (req, res) => {
 
     if (!user) {
         throw new ApiError(status.UNAUTHORIZED, "Invalid credentials");
+    }
+
+    if(!user.isVerified) {
+        throw new ApiError(status.FORBIDDEN, "Please verify your email first");
     }
 
     // Check for valid password
@@ -145,6 +188,7 @@ const logout = asyncHandler(async (req, res) => {
 
 module.exports = {
     register,
+    verifyEmail,
     logIn,
     refreshTokenHandler,
     logout
