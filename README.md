@@ -5,12 +5,15 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 ## Features
 
 - User authentication with JWT tokens
+- Email verification before account activation
+- Auto-login after email verification
 - Role-based authorization (User/Admin)
 - Password hashing with bcrypt
 - MongoDB database integration
 - Input validation with Joi
 - Error handling middleware
 - CORS support
+- Email service with Nodemailer
 
 ## Tech Stack
 
@@ -45,7 +48,12 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
    MONGO_URI=mongodb://127.0.0.1:27017/interprep
    ACCESS_TOKEN_SECRET=your_access_token_secret_here
    REFRESH_TOKEN_SECRET=your_refresh_token_secret_here
+   EMAIL_USER=your_gmail@gmail.com
+   EMAIL_PASS=your_gmail_app_password
+   CLIENT_URL=http://localhost:3000
    ```
+   
+   **Note:** For Gmail, use [App Passwords](https://myaccount.google.com/apppasswords) instead of your regular password (requires 2-Step Verification)
 
 4. Start MongoDB service (if running locally)
 
@@ -70,14 +78,25 @@ The server will start on port 3000 by default.
 #### Register User
 - **POST** `/api/auth/register`
 - **Body**: `{ "name": "string", "email": "string", "password": "string", "role": "user"|"admin" }`
+- **Response**: User account created, verification email sent
+- **Note**: User account is not verified yet and cannot access protected routes
+
+#### Verify Email
+- **GET** `/api/auth/verify-email?token=verification_token`
+- **Description**: Verifies user email and auto-logs them in with tokens
+- **Response**: Returns `accessToken`, `refreshToken`, and user data
+- **Note**: Token is sent via email and expires in 10 minutes
 
 #### Login
 - **POST** `/api/auth/login`
 - **Body**: `{ "email": "string", "password": "string" }`
+- **Requirement**: User must have verified their email first
+- **Response**: Returns `accessToken`, `refreshToken`, and user data
 
 #### Refresh Token
 - **POST** `/api/auth/refresh`
 - **Body**: `{ "refreshToken": "string" }`
+- **Response**: Returns new `accessToken`
 
 #### Logout
 - **POST** `/api/auth/logout`
@@ -126,7 +145,8 @@ server/
     │   ├── admin.routes.js # Admin endpoints
     │   └── user.routes.js  # User endpoints
     ├── services/
-    │   └── token.service.js # JWT token generation
+    │   ├── token.service.js # JWT token generation
+    │   └── email.service.js # Email verification service
     └── utils/
         ├── apiError.js    # Custom error class
         ├── asyncHandler.js # Async error wrapper
@@ -139,9 +159,20 @@ server/
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `MONGO_URI` | MongoDB connection string | Yes |
-| `ACCESS_TOKEN_SECRET` | Secret key for JWT access tokens | Yes |
-| `REFRESH_TOKEN_SECRET` | Secret key for JWT refresh tokens | Yes |
+| `ACCESS_TOKEN_SECRET` | Secret key for JWT access tokens (minimum 32 characters) | Yes |
+| `REFRESH_TOKEN_SECRET` | Secret key for JWT refresh tokens (minimum 32 characters) | Yes |
+| `EMAIL_USER` | Gmail address for sending verification emails | Yes |
+| `EMAIL_PASS` | Gmail app password (not regular password) | Yes |
+| `CLIENT_URL` | Frontend URL for verification email links | Yes |
 | `NODE_ENV` | Environment (development/production) | No |
+
+### Email Configuration
+
+- **Service**: Gmail with OAuth
+- **Verification Token**: 32-byte random hex string
+- **Token Expiry**: 10 minutes
+- **Access Token Expiry**: 15 minutes
+- **Refresh Token Expiry**: 7 days
 
 ## Dependencies
 
@@ -152,6 +183,7 @@ server/
 - **joi**: Schema validation
 - **cors**: Cross-origin resource sharing
 - **dotenv**: Environment variable management
+- **nodemailer**: Email service for verification emails
 
 ## Development Dependencies
 
@@ -167,12 +199,16 @@ The server includes comprehensive error handling:
 
 ## Security Features
 
-- Password hashing with bcrypt
-- JWT-based authentication
-- Role-based access control
-- Input validation and sanitization
+- Password hashing with bcrypt (10-salt rounds)
+- JWT-based authentication with token expiry
+- Email verification to confirm user ownership
+- Role-based access control (RBAC)
+- Input validation and sanitization with Joi
 - CORS configuration
-- Secure token storage
+- Secure token storage in database
+- Refresh token rotation
+- Unverified users cannot access protected routes
+- App password usage for Gmail (not plain password)
 
 ## Contributing
 
