@@ -7,6 +7,8 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - User authentication with JWT tokens
 - Email verification before account activation
 - Auto-login after email verification
+- Forgot password with reset token
+- Secure password reset via email link
 - Role-based authorization (User/Admin)
 - Password hashing with bcrypt
 - MongoDB database integration
@@ -14,6 +16,7 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - Error handling middleware
 - CORS support
 - Email service with Nodemailer
+- Generic email service for extensibility
 
 ## Tech Stack
 
@@ -103,6 +106,19 @@ The server will start on port 3000 by default.
 - **Headers**: `Authorization: Bearer <access_token>`
 - **Body**: `{ "refreshToken": "string" }`
 
+#### Forgot Password
+- **POST** `/api/auth/forgot-password`
+- **Body**: `{ "email": "string" }`
+- **Response**: Reset link sent to email
+- **Requirement**: User must not be currently logged in
+- **Note**: Reset token expires in 10 minutes
+
+#### Reset Password
+- **POST** `/api/auth/reset-password`
+- **Body**: `{ "token": "string", "newPassword": "string" }`
+- **Response**: Password reset successful
+- **Note**: Token must be valid and not expired
+
 ### Protected Routes
 
 #### User Access
@@ -145,13 +161,14 @@ server/
     │   ├── admin.routes.js # Admin endpoints
     │   └── user.routes.js  # User endpoints
     ├── services/
-    │   ├── token.service.js # JWT token generation
-    │   └── email.service.js # Email verification service
-    └── utils/
-        ├── apiError.js    # Custom error class
-        ├── asyncHandler.js # Async error wrapper
-        └── validators/
-            └── auth.validator.js # Joi validation schemas
+    │   ├── token.service.js        # JWT token generation
+    │   └── email.service.js        # Email service (verification & password reset)
+    ├── utils/
+    │   ├── token.utils.js          # Utility token generation (verification & reset)
+    │   ├── apiError.js             # Custom error class
+    │   ├── asyncHandler.js         # Async error wrapper
+    │   └── validators/
+    │       └── auth.validator.js   # Joi validation schemas
 ```
 
 ## Environment Variables
@@ -169,10 +186,20 @@ server/
 ### Email Configuration
 
 - **Service**: Gmail with OAuth
-- **Verification Token**: 32-byte random hex string
-- **Token Expiry**: 10 minutes
-- **Access Token Expiry**: 15 minutes
-- **Refresh Token Expiry**: 7 days
+- **Verification Token**: 32-byte random hex string, expires in 10 minutes
+- **Reset Password Token**: 32-byte random hex string, expires in 10 minutes
+- **JWT Access Token Expiry**: 15 minutes
+- **JWT Refresh Token Expiry**: 7 days
+- **Generic Email Function**: Reusable for all email types
+
+### Password Reset Flow
+
+1. User requests password reset via `/forgot-password` endpoint
+2. Reset token generated and stored with expiry time
+3. Reset link sent to user's email
+4. User clicks link and submits new password via `/reset-password` endpoint
+5. Token validated - must exist and not be expired
+6. Password updated with new bcrypt hash
 
 ## Dependencies
 
@@ -183,7 +210,8 @@ server/
 - **joi**: Schema validation
 - **cors**: Cross-origin resource sharing
 - **dotenv**: Environment variable management
-- **nodemailer**: Email service for verification emails
+- **nodemailer**: Email service for verification and password reset emails
+- **crypto**: Secure token generation (built-in Node.js)
 
 ## Development Dependencies
 
@@ -202,13 +230,17 @@ The server includes comprehensive error handling:
 - Password hashing with bcrypt (10-salt rounds)
 - JWT-based authentication with token expiry
 - Email verification to confirm user ownership
+- Secure password reset with time-limited tokens
 - Role-based access control (RBAC)
 - Input validation and sanitization with Joi
 - CORS configuration
 - Secure token storage in database
 - Refresh token rotation
 - Unverified users cannot access protected routes
+- Users must logout to request password reset
+- Cryptographically secure token generation (32-byte random hex)
 - App password usage for Gmail (not plain password)
+- Token expiry checks on all time-sensitive operations
 
 ## Contributing
 
