@@ -29,7 +29,9 @@ const userSchema = new mongoose.Schema({
         default: false
     },
     verificationToken: String,
-    verificationTokenExpiry: Date
+    verificationTokenExpiry: Date,
+    resetPasswordToken: String,
+    resetPasswordExpiry: Date
 });
 
 // pre("save") middleware

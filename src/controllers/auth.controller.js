@@ -5,10 +5,11 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/apiError");
 const crypto = require("crypto");
-const { sendVerificationEmail } = require("../services/email.service");
+const { sendVerificationEmail, sendResetPasswordEmail } = require("../services/email.service");
+const { generateVerificationToken, generateResetPasswordToken } = require("../utils/token.utils");
 
 // Register
-const register = asyncHandler(async (req, res) => {
+const register = asyncHandler ( async (req, res) => {
 
     const { name, email, password, role } = req.body;
 
@@ -19,7 +20,7 @@ const register = asyncHandler(async (req, res) => {
         throw new ApiError(status.BAD_REQUEST, "User already exists");
     }
 
-    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationToken = generateVerificationToken();
 
     // Save the user
     const user = new User({
@@ -48,7 +49,7 @@ const register = asyncHandler(async (req, res) => {
 
 });
 
-const verifyEmail = asyncHandler(async(req, res) => {
+const verifyEmail = asyncHandler( async (req, res) => {
     const { token } = req.query;
 
     if(!token) {
@@ -57,7 +58,7 @@ const verifyEmail = asyncHandler(async(req, res) => {
 
     const user = await User.findOne({
         verificationToken: token,
-        verificationTokenExpiry: { $gt: Date.now()}
+        verificationTokenExpiry: { $gt: Date.now() }
     });
 
     if(!user) {
@@ -91,8 +92,62 @@ const verifyEmail = asyncHandler(async(req, res) => {
     });
 });
 
+// Forgot password
+const forgotPassword = asyncHandler ( async (req, res) => {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if(!user) {
+        throw new ApiError(status.UNAUTHORIZED, "Invalid credential");
+    }
+
+    if(user.refreshToken) {
+        throw new ApiError(status.BAD_REQUEST, "User already logged in");
+    }
+
+    const token = generateResetPasswordToken();
+
+    user.resetPasswordToken = token;
+    user.resetPasswordExpiry = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    sendResetPasswordEmail(email, token);
+    res.json({
+        message: "Reset link sent to email"
+    });
+});
+
+// Reset password
+const resetPassword = asyncHandler ( async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if(!token || !newPassword) {
+        throw new ApiError(status.BAD_REQUEST, "Token and new password required");
+    }
+
+    const user = await User.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpiry: { $gt: Date.now() }
+    });
+
+    if(!user) {
+        throw new ApiError(status.BAD_REQUEST, "Invalid or expired token");
+    }
+
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiry = null;
+    user.password = newPassword;
+
+    await user.save();
+
+    res.json({
+        message: "Password reset successful"
+    });
+});
+
 // Log in
-const logIn = asyncHandler(async (req, res) => {
+const logIn = asyncHandler ( async (req, res) => {
 
     const { email, password } = req.body;
 
@@ -136,8 +191,7 @@ const logIn = asyncHandler(async (req, res) => {
     });
 });
 
-
-const refreshTokenHandler = asyncHandler(async (req, res) => {
+const refreshTokenHandler = asyncHandler ( async (req, res) => {
 
     const { refreshToken } = req.body;
     if (!refreshToken) {
@@ -165,7 +219,7 @@ const refreshTokenHandler = asyncHandler(async (req, res) => {
     });
 });
 
-const logout = asyncHandler(async (req, res) => {
+const logout = asyncHandler( async (req, res) => {
 
     const { refreshToken } = req.body;
     if (!refreshToken) {
@@ -189,6 +243,8 @@ const logout = asyncHandler(async (req, res) => {
 module.exports = {
     register,
     verifyEmail,
+    forgotPassword,
+    resetPassword,
     logIn,
     refreshTokenHandler,
     logout
