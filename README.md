@@ -225,6 +225,62 @@ The server includes comprehensive error handling:
 - Async error wrapper for route handlers
 - Input validation with detailed error messages
 
+## Logging
+
+The server uses **Winston** for comprehensive logging:
+
+### Log Files
+- **`logs/error.log`** - Captures all errors with full context
+- **`logs/combined.log`** - Captures all log levels (info, error, etc.)
+
+### Log Format
+Each log entry includes:
+- Timestamp (ISO 8601)
+- Log level
+- Error message
+- HTTP method and URL
+- User ID (if authenticated)
+- Stack trace (in development) or excluded (in production)
+- Status code
+
+### Log Output
+- **Console** - Real-time output in development
+- **File** - Persistent storage for debugging and monitoring
+
+### Example Log Entry
+```json
+{
+  "level": "error",
+  "message": "\"password\" length must be at least 6 characters long",
+  "statusCode": 400,
+  "timestamp": "2026-04-17T16:29:02.257Z",
+  "method": "POST",
+  "url": "/api/auth/register",
+  "user": null,
+  "stack": "Error: ..."
+}
+```
+
+### Accessing Logs
+1. View real-time logs in console during development:
+   ```bash
+   npm run dev
+   ```
+
+2. View log files:
+   ```bash
+   # View error logs
+   cat logs/error.log
+   
+   # View all logs
+   cat logs/combined.log
+   ```
+
+3. Use `tail` for live log monitoring:
+   ```bash
+   tail -f logs/combined.log
+   ```
+
 ## Security Features
 
 - Password hashing with bcrypt (10-salt rounds)
