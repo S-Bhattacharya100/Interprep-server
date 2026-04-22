@@ -14,9 +14,13 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - MongoDB database integration
 - Input validation with Joi
 - Error handling middleware
+- HTTP request logging with Morgan
 - CORS support
 - Email service with Nodemailer
 - Generic email service for extensibility
+- Interview problem management (DSA, HR, System Design)
+- Problem filtering by difficulty and category
+- Pagination support for problems
 
 ## Tech Stack
 
@@ -26,6 +30,8 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - **Authentication**: JWT (JSON Web Tokens)
 - **Validation**: Joi
 - **Password Hashing**: bcrypt
+- **Email Service**: Nodemailer
+- **Logging**: Morgan
 - **CORS**: cors middleware
 
 ## Prerequisites
@@ -131,44 +137,84 @@ The server will start on port 3000 by default.
 - **Headers**: `Authorization: Bearer <access_token>`
 - **Roles**: admin
 
+### Problem Routes (`/api/problem`)
+
+#### Create Problem
+- **POST** `/api/problem`
+- **Headers**: `Authorization: Bearer <access_token>`
+- **Roles**: Admin only
+- **Body**: 
+  ```json
+  {
+    "title": "string",
+    "description": "string",
+    "category": "DSA|HR|System Design",
+    "difficulty": "Easy|Medium|Hard",
+    "tags": ["string"],
+    "constraints": "string",
+    "examples": [
+      {
+        "input": "string",
+        "output": "string",
+        "explanation": "string"
+      }
+    ]
+  }
+  ```
+- **Response**: Created problem object with `createdBy` user ID and timestamps
+
+#### Get Problems
+- **GET** `/api/problem?difficulty=Easy&category=DSA&page=1&limit=10`
+- **Headers**: `Authorization: Bearer <access_token>`
+- **Query Parameters**:
+  - `difficulty` (optional): Easy | Medium | Hard
+  - `category` (optional): DSA | HR | System Design
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 10)
+- **Response**: Array of problems with count and pagination
+
 ## Project Structure
 
 ```
 server/
-├── server.js              # Main server file
+├── app.js                 # Main Express app
+├── server.js              # Server startup file
 ├── package.json           # Dependencies and scripts
 ├── .env                   # Environment variables
 ├── .gitignore            # Git ignore rules
 └── src/
     ├── config/
-    │   └── db.js         # Database connection
+    │   └── db.js                  # Database connection
     ├── constants/
-    │   ├── roles.js      # User roles
-    │   └── statusCodes.js # HTTP status codes
+    │   ├── roles.js               # User roles
+    │   └── statusCodes.js         # HTTP status codes
     ├── controllers/
-    │   └── auth.controller.js # Authentication logic
+    │   ├── auth.controller.js     # Authentication logic
+    │   └── problem.controller.js  # Problem management logic
     ├── dto/
-    │   └── user.dto.js   # Data transfer objects
+    │   └── user.dto.js            # Data transfer objects
     ├── middleware/
-    │   ├── auth.middleware.js    # JWT authentication
-    │   ├── error.middleware.js   # Error handling
-    │   ├── role.middleware.js    # Role authorization
+    │   ├── auth.middleware.js     # JWT authentication
+    │   ├── error.middleware.js    # Error handling
+    │   ├── role.middleware.js     # Role authorization
     │   └── validate.middleware.js # Input validation
     ├── models/
-    │   └── user.model.js # User schema
+    │   ├── user.model.js          # User schema
+    │   └── problem.model.js       # Problem schema
     ├── routes/
-    │   ├── auth.routes.js  # Auth endpoints
-    │   ├── admin.routes.js # Admin endpoints
-    │   └── user.routes.js  # User endpoints
+    │   ├── auth.routes.js         # Auth endpoints
+    │   ├── admin.routes.js        # Admin endpoints
+    │   ├── user.routes.js         # User endpoints
+    │   └── problem.routes.js      # Problem endpoints
     ├── services/
-    │   ├── token.service.js        # JWT token generation
-    │   └── email.service.js        # Email service (verification & password reset)
-    ├── utils/
-    │   ├── token.utils.js          # Utility token generation (verification & reset)
-    │   ├── apiError.js             # Custom error class
-    │   ├── asyncHandler.js         # Async error wrapper
-    │   └── validators/
-    │       └── auth.validator.js   # Joi validation schemas
+    │   ├── token.service.js       # JWT token generation
+    │   └── email.service.js       # Email service (verification & password reset)
+    └── utils/
+        ├── token.utils.js         # Utility token generation (verification & reset)
+        ├── apiError.js            # Custom error class
+        ├── asyncHandler.js        # Async error wrapper
+        └── validators/
+            └── auth.validator.js  # Joi validation schemas
 ```
 
 ## Environment Variables
@@ -201,6 +247,34 @@ server/
 5. Token validated - must exist and not be expired
 6. Password updated with new bcrypt hash
 
+## Data Models
+
+### User Schema
+- **name**: String (required)
+- **email**: String (required, unique)
+- **password**: String (required, hashed with bcrypt)
+- **role**: String (enum: "user", "admin", default: "user")
+- **isVerified**: Boolean (default: false)
+- **verificationToken**: String (32-byte hex token)
+- **verificationTokenExpiry**: Date
+- **resetPasswordToken**: String (32-byte hex token)
+- **resetPasswordExpiry**: Date
+- **refreshToken**: String (JWT token)
+
+### Problem Schema
+- **title**: String (required, trimmed)
+- **description**: String (required)
+- **category**: String (enum: "DSA", "HR", "System Design", required)
+- **difficulty**: String (enum: "Easy", "Medium", "Hard", required)
+- **tags**: Array of Strings
+- **constraints**: String
+- **examples**: Array of objects
+  - **input**: String
+  - **output**: String
+  - **explanation**: String
+- **createdBy**: ObjectId (reference to User, required)
+- **timestamps**: Auto-generated createdAt and updatedAt
+
 ## Dependencies
 
 - **express**: Web framework
@@ -211,6 +285,7 @@ server/
 - **cors**: Cross-origin resource sharing
 - **dotenv**: Environment variable management
 - **nodemailer**: Email service for verification and password reset emails
+- **morgan**: HTTP request logging middleware
 - **crypto**: Secure token generation (built-in Node.js)
 
 ## Development Dependencies
