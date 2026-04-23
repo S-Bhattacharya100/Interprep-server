@@ -191,6 +191,7 @@ const logIn = asyncHandler ( async (req, res) => {
     });
 });
 
+// Refresh token handler
 const refreshTokenHandler = asyncHandler ( async (req, res) => {
 
     const { refreshToken } = req.body;
