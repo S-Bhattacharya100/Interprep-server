@@ -200,7 +200,8 @@ server/
     │   └── validate.middleware.js # Input validation
     ├── models/
     │   ├── user.model.js          # User schema
-    │   └── problem.model.js       # Problem schema
+    │   ├── problem.model.js       # Problem schema
+    │   └── submission.model.js    # Submission schema
     ├── routes/
     │   ├── auth.routes.js         # Auth endpoints
     │   ├── admin.routes.js        # Admin endpoints
@@ -274,6 +275,24 @@ server/
   - **explanation**: String
 - **createdBy**: ObjectId (reference to User, required)
 - **timestamps**: Auto-generated createdAt and updatedAt
+
+### Submission Schema
+- **user**: ObjectId (reference to User, required)
+- **problem**: ObjectId (reference to Problem, required)
+- **code**: String (required) - Source code submitted by user
+- **language**: String (enum: "java", "javascript", "python", "cpp", required)
+- **status**: String (enum: "Pending", "Accepted", "Wrong Answer", "Runtime Error", "Time Limit Exceeded", default: "Pending")
+- **output**: String - Program output from execution
+- **error**: String - Error message if execution failed
+- **executionTime**: Number - Execution time in milliseconds
+- **timestamps**: Auto-generated createdAt and updatedAt
+
+**Status Descriptions:**
+- **Pending**: Submission received, awaiting execution
+- **Accepted**: Code passed all test cases
+- **Wrong Answer**: Code executed but produced incorrect output
+- **Runtime Error**: Code crashed during execution
+- **Time Limit Exceeded**: Code took too long to execute
 
 ## Dependencies
 
