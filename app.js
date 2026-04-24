@@ -5,6 +5,7 @@ const morgan = require("morgan");
 const connectDB = require("./src/config/db");
 const authRoutes = require("./src/routes/auth.routes");
 const problemRouts = require("./src/routes/problem.routes");
+const submissionRoute = require("./src/routes/submission.routes");
 const errorHandler = require("./src/middleware/error.middleware");
 
 const app = express();
@@ -25,6 +26,9 @@ app.use("/api/auth", authRoutes);
 
 // Problem route
 app.use("/api/problem", problemRouts);
+
+// Submission route
+app.use("/api/submission", submissionRoute);
 
 // Calling error handling middleware
 app.use(errorHandler);

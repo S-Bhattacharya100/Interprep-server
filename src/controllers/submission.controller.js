@@ -27,4 +27,4 @@ const createSubmission = asyncHandler ( async (req, res) => {
     });
 });
 
-module.exports = createSubmission;
+module.exports = { createSubmission };
