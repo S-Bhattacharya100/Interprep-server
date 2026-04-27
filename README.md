@@ -173,6 +173,23 @@ The server will start on port 3000 by default.
   - `limit` (optional): Items per page (default: 10)
 - **Response**: Array of problems with count and pagination
 
+### Submission Routes (`/api/submission`)
+
+#### Create Submission
+- **POST** `/api/submission`
+- **Headers**: `Authorization: Bearer <access_token>`
+- **Body**:
+  ```json
+  {
+    "problem": "<problem_id>",
+    "code": "string",
+    "language": "java|javascript|python|cpp"
+  }
+  ```
+- **Response**: Created submission object with status, output, error, executionTime, and timestamps
+
+> Only authenticated users can submit solutions. The `user` field is automatically set from the JWT token.
+
 ## Project Structure
 
 ```
