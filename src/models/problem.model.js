@@ -36,6 +36,12 @@ const problemSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
+    testCases: [
+        {
+            input: String,
+            output: String
+        }
+    ]
 }, {timestamps: true});
 
 module.exports = mongoose.model("Problem", problemSchema);

@@ -49,6 +49,35 @@ const register = asyncHandler ( async (req, res) => {
 
 });
 
+// Re-send verification email
+const resendVerification = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new ApiError(status.NOT_FOUND, "User not found");
+    }
+
+    if (user.isVerified) {
+        throw new ApiError(status.BAD_REQUEST, "User already verified");
+    }
+
+    const token = generateVerificationToken();
+
+    user.verificationToken = token;
+    user.verificationTokenExpiry = Date.now() + 10 * 60 * 1000;
+
+    await user.save();
+
+    await sendVerificationEmail(email, token);
+
+    res.json({
+        message: "Verification email resent"
+    });
+});
+
+// Verify email
 const verifyEmail = asyncHandler( async (req, res) => {
     const { token } = req.query;
 
@@ -243,6 +272,7 @@ const logout = asyncHandler( async (req, res) => {
 
 module.exports = {
     register,
+    resendVerification,
     verifyEmail,
     forgotPassword,
     resetPassword,

@@ -28,7 +28,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/problem", problemRouts);
 
 // Submission route
-app.use("/api/submission", submissionRoute);
+app.use("/api/submissions", submissionRoute);
 
 // Calling error handling middleware
 app.use(errorHandler);

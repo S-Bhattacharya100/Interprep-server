@@ -22,6 +22,12 @@ const registerSchema = joi.object({
     .default("user")
 });
 
+const resendVerificationSchema = joi.object({
+    email: joi.string()
+    .email()
+    .required()
+});
+
 // Login vadilation
 const loginSchema = joi.object({
     email: joi.string()
@@ -46,6 +52,7 @@ const logoutSchema = joi.object({
 
 module.exports = { 
     registerSchema,
+    resendVerificationSchema,
     loginSchema,
     refreshTokenSchema,
     logoutSchema
