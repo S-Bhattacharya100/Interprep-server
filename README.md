@@ -6,6 +6,7 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 
 - User authentication with JWT tokens
 - Email verification before account activation
+- Resend verification email if expired or missed
 - Auto-login after email verification
 - Forgot password with reset token
 - Secure password reset via email link
@@ -21,6 +22,8 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - Interview problem management (DSA, HR, System Design)
 - Problem filtering by difficulty and category
 - Pagination support for problems
+- Code submission and evaluation
+- Multi-language support (Java, JavaScript, Python, C++)
 
 ## Tech Stack
 
@@ -89,6 +92,13 @@ The server will start on port 3000 by default.
 - **Body**: `{ "name": "string", "email": "string", "password": "string", "role": "user"|"admin" }`
 - **Response**: User account created, verification email sent
 - **Note**: User account is not verified yet and cannot access protected routes
+
+#### Resend Verification Email
+- **POST** `/api/auth/resend-verification`
+- **Body**: `{ "email": "string" }`
+- **Response**: Verification email resent to the provided email address
+- **Use Case**: User didn't receive the verification email or token expired
+- **Note**: New verification token generated with 10-minute expiry
 
 #### Verify Email
 - **GET** `/api/auth/verify-email?token=verification_token`
@@ -206,8 +216,9 @@ server/
     │   ├── roles.js               # User roles
     │   └── statusCodes.js         # HTTP status codes
     ├── controllers/
-    │   ├── auth.controller.js     # Authentication logic
-    │   └── problem.controller.js  # Problem management logic
+    │   ├── auth.controller.js            # Authentication logic
+    │   ├── problem.controller.js         # Problem management logic
+    │   └── submission.controller.js      # Code submission and evaluation logic
     ├── dto/
     │   └── user.dto.js            # Data transfer objects
     ├── middleware/
@@ -220,13 +231,15 @@ server/
     │   ├── problem.model.js       # Problem schema
     │   └── submission.model.js    # Submission schema
     ├── routes/
-    │   ├── auth.routes.js         # Auth endpoints
-    │   ├── admin.routes.js        # Admin endpoints
-    │   ├── user.routes.js         # User endpoints
-    │   └── problem.routes.js      # Problem endpoints
+    │   ├── auth.routes.js          # Auth endpoints
+    │   ├── admin.routes.js         # Admin endpoints
+    │   ├── user.routes.js          # User endpoints
+    │   ├── problem.routes.js       # Problem endpoints
+    │   └── submission.routes.js    # Code submission endpoints
     ├── services/
     │   ├── token.service.js       # JWT token generation
-    │   └── email.service.js       # Email service (verification & password reset)
+    │   ├── email.service.js       # Email service (verification & password reset)
+    │   └── runner.service.js      # Code execution and evaluation service
     └── utils/
         ├── token.utils.js         # Utility token generation (verification & reset)
         ├── apiError.js            # Custom error class
@@ -265,6 +278,22 @@ server/
 5. Token validated - must exist and not be expired
 6. Password updated with new bcrypt hash
 
+### Code Submission and Evaluation Flow
+
+1. User submits code via `/api/submissions` endpoint with problem ID, code, and language
+2. Submission created in database with "Pending" status
+3. Code passed to `runner.service.js` for evaluation
+4. Test cases from problem are used for validation
+5. Code execution result (status, output, error) stored in submission
+6. User can view submission with evaluation results
+7. Status updated to "Accepted", "Wrong Answer", "Runtime Error", or "Time Limit Exceeded"
+
+**Supported Languages:**
+- Java
+- JavaScript
+- Python
+- C++
+
 ## Data Models
 
 ### User Schema
@@ -286,10 +315,13 @@ server/
 - **difficulty**: String (enum: "Easy", "Medium", "Hard", required)
 - **tags**: Array of Strings
 - **constraints**: String
-- **examples**: Array of objects
+- **examples**: Array of objects for problem examples
   - **input**: String
   - **output**: String
   - **explanation**: String
+- **testCases**: Array of objects for automated evaluation
+  - **input**: String
+  - **output**: String
 - **createdBy**: ObjectId (reference to User, required)
 - **timestamps**: Auto-generated createdAt and updatedAt
 
@@ -408,6 +440,10 @@ Each log entry includes:
 - Cryptographically secure token generation (32-byte random hex)
 - App password usage for Gmail (not plain password)
 - Token expiry checks on all time-sensitive operations
+- Only authenticated users can submit code
+- Submissions linked to user account for audit trail
+- Test case validation for code evaluation
+- Problem ownership verification by admin only
 
 ## Contributing
 
