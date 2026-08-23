@@ -1,8 +1,7 @@
 import { useDispatch } from "react-redux";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { loginUser } from "../features/auth/authApi";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../features/auth/authAPI";
 
 import {
     loginStart,

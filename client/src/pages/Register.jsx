@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { registerUser } from "../features/auth/authApi";
+import { registerUser } from "../features/auth/authAPI";
 
 const Register = () => {
-    const [formData, setFormData] = ({
+    const [formData, setFormData] = useState({
         name: "",
         email: "",
         password: "",
         conformPassword: ""
     });
 
-    const [loading, setLoading] = (false);
-    const [success, setSuccess] = ("");
-    const [error, setError] = ("");
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");
 
     // Handle input change
     const handleChange = (e) => {
@@ -28,6 +28,7 @@ const Register = () => {
 
         setLoading("");
         setSuccess("");
+        setError("");
 
         // Client-side validations
         if(!formData.name.trim()) {
@@ -85,7 +86,7 @@ const Register = () => {
 
                     Didn't receive the email?
 
-                    <Link to={"/resend-verication"}>
+                    <Link to={"/resend-verification"}>
                         {"Click here"}
                     </Link>
                 </div>

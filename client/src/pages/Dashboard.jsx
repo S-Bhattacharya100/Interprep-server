@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { logoutUser } from "../features/auth/authAPI";
 import { logout } from "../features/auth/authSlice";
 
 const Dashboard = () => {
@@ -8,9 +9,24 @@ const Dashboard = () => {
 
     const { user } = useSelector((state) => state.auth);
 
-    const handleLogout = () => {
-        dispatch(logout());
-        navigate("/login");
+    const handleLogout = async () => {
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        try {
+            if(refreshToken) {
+                await logoutUser({
+                    refreshToken
+                });
+            }
+        } catch (error) {
+            console.error (
+                "Logout failed",
+                error.response?.data || error.message
+            );
+        } finally {
+            dispatch(logout());
+            navigate ("/login");
+        }
     };
 
     return (

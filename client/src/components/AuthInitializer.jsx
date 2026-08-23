@@ -11,6 +11,7 @@ const AuthInitializer = ({ children }) => {
             const accessToken = localStorage.getItem("accessToken");
 
             if(!accessToken) {
+                dispatch(authInitialized());
                 return;
             }
 
@@ -26,7 +27,7 @@ const AuthInitializer = ({ children }) => {
                     error.response?.data || error.message
                 );
 
-                localStorage.removeItem("accessToken");
+                dispatch(logout());
             } finally {
                 dispatch(authInitialized());
             }
