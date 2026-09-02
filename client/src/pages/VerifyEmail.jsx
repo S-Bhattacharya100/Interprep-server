@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 
-import { verifyEmail } from "../features/auth/authApi";
+import { verifyEmail } from "../features/auth/authAPI";
 import { loginSuccess } from "../features/auth/authSlice";
 
 const VerifyEmail = () => {
@@ -11,8 +11,10 @@ const VerifyEmail = () => {
     const dispatch = useDispatch();
     const [searchParams] = useSearchParams();
 
+    const verificationStarted = useRef(false);
+
     const [loading, setLoading] = useState(true);
-    const [sucess, setSuccess] = useState("");
+    const [success, setSuccess] = useState("");
     const [error, setError] = useState("");
     
     useEffect(() => {
@@ -55,7 +57,7 @@ const VerifyEmail = () => {
 
             } catch (error) {
 
-                setError(error.data?.response?.message || "Email verification failed");
+                setError(error.response?.data?.message || "Email verification failed");
 
             } finally {
 
@@ -76,6 +78,7 @@ const VerifyEmail = () => {
                     Interprep
                 </h1>
 
+                {/* Loading */}
                 {loading && (
                     <>
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -90,7 +93,8 @@ const VerifyEmail = () => {
                     </>
                 )}
 
-                {!loading && success && (
+                {/* Success */}
+                {!loading && success && !error && (
                     <>
                         <div className="text-green-600 text-5xl mb-4">
                             ✓
@@ -110,7 +114,8 @@ const VerifyEmail = () => {
                     </>
                 )}
 
-                {!loading && error && (
+                {/* Error */}
+                {!loading && error && !success && (
                     <>
                         <div className="text-red-500 text-5xl mb-4">
                             ✕

@@ -43,7 +43,7 @@ const AppRoutes = () => {
             />
 
             <Route
-                path="/verifyEmail"
+                path="/verify-email"
                 element={<VerifyEmail />}
             />
 

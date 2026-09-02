@@ -32,7 +32,7 @@ const sendEmail = async (email, subject, html) => {
 
 // Send verification email
 const sendVerificationEmail = async (email, token) => {
-    const verificationUrl = `${process.env.CLIENT_URL}/api/auth/verify-email?token=${token}`;
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
 
     const html = `
         <h2>Email Verification</h2>
@@ -45,7 +45,7 @@ const sendVerificationEmail = async (email, token) => {
 
 // Send reset password email
 const sendResetPasswordEmail = async (email, token) => {
-    const resetUrl = `${process.env.CLIENT_URL}/api/auth/reset-password?token=${token}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
 
     const html = `
         <h2>Password Reset</h2>
