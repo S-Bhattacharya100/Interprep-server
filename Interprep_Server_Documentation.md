@@ -27,9 +27,9 @@ The frontend now includes a modern auth setup built with Redux Toolkit and Axios
 - `client/src/features/auth/authAPI.js` – API helpers for register, login, verification, reset, refresh, and logout
 - `client/src/features/auth/authSlice.js` – Redux slice for tracking auth state, including `user`, `isAuthenticated`, and `authInitialized`; the current user lives in Redux instead of localStorage
 - `client/src/components/AuthInitializer.jsx` – app bootstrap that reads the stored access token, calls `GET /api/auth/me`, stores the returned user, and marks auth initialization complete
-- `client/src/pages/Register.jsx` – registration page with validation and feedback messaging
-- `client/src/pages/Login.jsx` – login page for returning users, with improved API error handling
-- `client/src/pages/VerifyEmail.jsx` – email verification flow
+- `client/src/pages/Register.jsx` – styled registration form with controlled state, validation, and error feedback
+- `client/src/pages/Login.jsx` – login flow that dispatches credentials to Redux and navigates successful users to the dashboard
+- `client/src/pages/VerifyEmail.jsx` – token-based verification page that dispatches automatic login credentials after successful verification
 - `client/src/pages/ForgotPassword.jsx` – password recovery entry point
 - `client/src/pages/ResetPassword.jsx` – password reset form
 - `client/src/routes/AppRoutes.jsx` – route configuration for public and protected pages
@@ -55,7 +55,20 @@ The latest frontend changes introduce a more complete authentication experience 
 - A centralized `AuthInitializer` that loads the current user once at app startup and sets `authInitialized`
 - Redux auth state now includes `authInitialized` and keeps the active user in memory instead of persisting it in localStorage
 - Dashboard logic no longer calls the current-user endpoint directly; initialization is handled upstream by the app bootstrap
-- Axios and login flow improvements for cleaner error handling during failed authentication attempts
+- `AuthInitializer` marks initialization complete when no access token or user is available, so route guards do not remain in a loading state
+- Login flow improvements for cleaner error handling during failed authentication attempts
+- `VerifyEmail` uses a ref guard to avoid duplicate verification requests when effects are re-run
+- Verification emails are generated with a client URL containing the verification token; successful verification returns auto-login tokens
+- Dashboard logout clears client auth state and calls the backend, which invalidates the stored refresh token
+- Registration uses `useState` for form, loading, success, and error state, including `setError` for validation and API failures
+
+### 0.4 Authentication Flow Notes
+
+1. Registration creates an unverified user and sends a verification email through `email.service.js`.
+2. The client `VerifyEmail` page reads the token from the URL and calls `GET /api/auth/verify-email?token=...`.
+3. On success, the server marks the account verified and returns access and refresh tokens; the client dispatches `loginSuccess` and navigates to `/dashboard`.
+4. On startup, `AuthInitializer` calls `GET /api/auth/me` when an access token exists. It dispatches `setUser` for a valid user and always dispatches `authInitialized`, including when no user is available.
+5. Dashboard logout sends the refresh token to `POST /api/auth/logout`. The server clears its stored token, and the client clears local auth state and redirects to `/login`.
 
 # TABLE OF CONTENTS
 
@@ -1200,7 +1213,7 @@ const sendEmail = async (email, subject, html) => {
 
 // Send verification email
 const sendVerificationEmail = async (email, token) => {
-    const verificationUrl = `${process.env.CLIENT_URL}/api/auth/verify-email?token=${token}`;
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
     const html = `
         <h2>Email Verification</h2>
         <p>Click below to verify your account:</p>
@@ -1211,7 +1224,7 @@ const sendVerificationEmail = async (email, token) => {
 
 // Send reset password email
 const sendResetPasswordEmail = async (email, token) => {
-    const resetUrl = `${process.env.CLIENT_URL}/api/auth/reset-password?token=${token}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
     const html = `
         <h2>Password Reset</h2>
         <p>Click below to reset your password:</p>

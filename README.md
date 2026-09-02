@@ -105,9 +105,9 @@ The React client includes a professional auth architecture that is easy to maint
 - `client/src/features/auth/authAPI.js` — reusable auth API helpers for register, login, refresh, logout, and password actions
 - `client/src/features/auth/authSlice.js` — Redux auth slice with `user`, `isAuthenticated`, and `authInitialized` state; the current user is kept in Redux rather than localStorage
 - `client/src/components/AuthInitializer.jsx` — app-level bootstrap that reads the stored access token, calls `GET /api/auth/me`, sets the current user, and marks auth as initialized
-- `client/src/pages/Register.jsx` — registration page with validation and user feedback
-- `client/src/pages/Login.jsx` — login experience for returning users, with improved error handling for failed auth attempts
-- `client/src/pages/VerifyEmail.jsx` — email verification flow
+- `client/src/pages/Register.jsx` — styled registration page with controlled form state, client-side validation, and API error feedback
+- `client/src/pages/Login.jsx` — login flow that stores returned credentials in Redux and redirects successful users to the dashboard
+- `client/src/pages/VerifyEmail.jsx` — token-based email verification page that automatically logs in verified users and prevents duplicate verification requests
 - `client/src/pages/ForgotPassword.jsx` — password recovery entry point
 - `client/src/pages/ResetPassword.jsx` — password reset form
 - `client/src/routes/AppRoutes.jsx` — route configuration for public and protected pages
@@ -115,6 +115,8 @@ The React client includes a professional auth architecture that is easy to maint
 - `client/src/components/PublicRoute.jsx` — prevents already-authenticated users from unnecessarily visiting public auth pages like `/login`
 
 The dashboard no longer fetches the current user directly on mount. Instead, the initializer fetches the session data once on app startup, and the rest of the app reads the authenticated user from Redux state.
+
+Dashboard logout calls `POST /api/auth/logout` with the stored refresh token. The backend removes that token from the user record, while the frontend clears Redux and local token state and redirects to `/login` even if the API request fails.
 
 Note: Tailwind CSS v4 is used for styling the Login page and other UI components. The client includes `tailwind.config.cjs`, `postcss.config.cjs`, and Vite integration via `@tailwindcss/vite` plugin in `vite.config.js` for optimized development experience; run `npm install` in `client/` to install the required packages.
 
@@ -142,7 +144,7 @@ The client now includes route-based authentication flow for:
 
 - `/register` — guest-only route
 - `/login` — guest-only route; redirects authenticated users to `/dashboard`
-- `/verifyEmail` — email verification page
+- `/verify-email?token=...` — email verification link handled by the `VerifyEmail` page
 - `/forgotPassword` — password recovery page
 - `/resetPassword` — password reset page
 - `/dashboard` — protected route that requires a valid auth session
@@ -154,6 +156,8 @@ The app bootstraps auth by wrapping the router with `AuthInitializer`, so route 
 The backend exposes an endpoint to return the current authenticated user profile:
 
 - `GET /api/auth/me` — returns user info for the access token presented in the request (attach `Authorization: Bearer <accessToken>`)
+
+Registration sends a verification email. The verification endpoint validates the token, marks the account as verified, returns access and refresh tokens, and allows the client to log the user in automatically. A verification email can also be resent through `POST /api/auth/resend-verification`.
 
 ## Environment variables
 
@@ -174,6 +178,8 @@ A professional workflow for this monorepo includes:
 - Keep authentication pages, route guards, and Redux auth state in sync when making changes.
 - Verify protected routes still redirect unauthenticated users correctly after the `AuthInitializer` completes.
 - Ensure public routes block already-authenticated users and redirect them to the dashboard.
+- Verify login and email verification store tokens and reach the dashboard only after successful authentication.
+- Verify logout invalidates the refresh token on the server and clears client authentication state.
 - Ensure email verification and password reset flows are wired to the expected frontend routes.
 
 1. Create a feature branch for each change.
