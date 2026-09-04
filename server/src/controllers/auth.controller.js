@@ -141,7 +141,7 @@ const forgotPassword = asyncHandler ( async (req, res) => {
 
     await user.save();
 
-    sendResetPasswordEmail(email, token);
+    await sendResetPasswordEmail(email, token);
     res.json({
         message: "Reset link sent to email"
     });

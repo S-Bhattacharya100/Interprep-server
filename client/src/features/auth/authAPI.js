@@ -12,11 +12,14 @@ export const loginUser = (credentials) => {
 export const verifyEmail = (token) => {
     return axiosInstance.get(`auth/verify-email?token=${token}`);
 }
-export const forgotPassword = (emailData) => {
-    return axiosInstance.post("auth/forgot-password", emailData);
+export const forgotPassword = (email) => {
+    return axiosInstance.post("auth/forgot-password", {email});
 }
-export const resetPassword = (resetData) => {
-    return axiosInstance.post("auth/reset-password", resetData);
+export const resetPassword = (token, newPassword) => {
+    return axiosInstance.post("auth/reset-password", {
+        token, 
+        newPassword
+    });
 }
 export const refreshToken = (refreshTokenData) => {
     return axiosInstance.post("auth/refresh", refreshTokenData);

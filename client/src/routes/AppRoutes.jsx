@@ -48,12 +48,12 @@ const AppRoutes = () => {
             />
 
             <Route
-                path="/forgotPassword"
+                path="/forgot-password"
                 element={<ForgotPassword />}
             />
 
             <Route
-                path="/resetPassword"
+                path="/reset-password"
                 element={<ResetPassword />}
             />
 

@@ -85,6 +85,17 @@ const Login = () => {
                         <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" required />
                     </div>
 
+                    {/* Forgot password */}
+
+                    <div className="text-right mt-2">
+                        <Link
+                            to="/forgot-password"
+                            className="text-blue-600 hover:underline text-sm"
+                        >
+                            Forgot Password?
+                        </Link>
+                    </div>
+
                     {/* Login Button */}
 
                     <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
